@@ -1,0 +1,14 @@
+version: 0.2
+phases:
+  build:
+    commands:
+      - mvn -DskipTests package
+post_build:
+  commands:
+    - 'if [ -z "$ARTIFACTS_BUCKET" ]; then echo "Set ARTIFACTS_BUCKET env var in CodeBuild"; exit 1; fi'
+    - COMMIT=${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual}
+    - aws s3 cp target/s3-cli-vg-1.0.0.jar s3://$ARTIFACTS_BUCKET/builds/s3-cli-vg-${COMMIT}.jar
+artifacts:
+  files:
+    - target/s3-cli-vg-1.0.0.jar
+  discard-paths: yes
