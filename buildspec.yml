@@ -3,21 +3,21 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      - echo "Commit $CODEBUILD_RESOLVED_SOURCE_VERSION"
-      - mvn -B -q -DskipTests=false test
+      - 'echo "Commit $CODEBUILD_RESOLVED_SOURCE_VERSION"'
+      - 'mvn -B -q -DskipTests=false test'
+
   build:
     commands:
-      - mvn -B -q -DskipTests=false package
+      - 'mvn -B -q -DskipTests=false package'
+
   post_build:
     commands:
-      - COMMIT="${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}"
-      - mkdir -p artifact
-      # Pick one jar from target/ (ignore 'original' jars if present)
-      - JAR=$(ls -1 target/*.jar | grep -v 'original' | head -n1)
-      - echo "Using JAR: $JAR"
-      - cp "$JAR" "artifact/s3-cli-$COMMIT.jar"
-      - aws s3 cp "artifact/s3-cli-$COMMIT.jar" "s3://$ARTIFACTS_BUCKET/builds/"
-
+      - 'COMMIT="${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}"'
+      - 'mkdir -p artifact'
+      - 'JAR=$(ls -1 target/*.jar | grep -v original | head -n1)'
+      - 'echo "Using JAR: $JAR"'
+      - 'cp "$JAR" "artifact/s3-cli-$COMMIT.jar"'
+      - 'aws s3 cp "artifact/s3-cli-$COMMIT.jar" "s3://$ARTIFACTS_BUCKET/builds/"'
 
 artifacts:
   files:
