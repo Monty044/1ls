@@ -1,25 +1,48 @@
 version: 0.2
 
 phases:
+  install:
+    runtime-versions:
+      java: corretto17
+
   pre_build:
     commands:
-      - 'echo "Commit $CODEBUILD_RESOLVED_SOURCE_VERSION"'
-      - 'mvn -B -q -DskipTests=false test'
+      - echo "Commit $CODEBUILD_RESOLVED_SOURCE_VERSION"
+      # Run tests for the WEB profile (Spring Boot)
+      - mvn -P web -B -q clean test
 
   build:
     commands:
-      - 'mvn -B -q -DskipTests=false package'
+      # 1) Build the Spring Boot web app for Elastic Beanstalk
+      - echo "Building WEB JAR (profile=web)…"
+      - mvn -P web -B -q package
+      - WEB_JAR=$(ls -1 target/*.jar | head -n1)
+      - cp "$WEB_JAR" target/webapp.jar
+      - echo "WEB JAR copied to target/webapp.jar"
+
+      # 2) Build the CLI JAR (VG) with Shade (don’t skip tests here)
+      - echo "Building CLI JAR (VG)…"
+      - mvn -B -q -DskipTests=false package
 
   post_build:
     commands:
-      - 'COMMIT="${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}"'
-      - 'mkdir -p artifact'
-      - 'JAR=$(ls -1 target/*.jar | grep -v original | head -n1)'
-      - 'echo "Using JAR: $JAR"'
-      - 'cp "$JAR" "artifact/s3-cli-$COMMIT.jar"'
-      - 'aws s3 cp "artifact/s3-cli-$COMMIT.jar" "s3://$ARTIFACTS_BUCKET/builds/"'
+      # Keep your VG artifact naming + optional upload to your artifacts bucket
+      - COMMIT="${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}"
+      - mkdir -p artifact
+      - CLI_JAR=$(ls -1 target/*.jar | grep -v original | grep -v webapp.jar | head -n1)
+      - echo "Using CLI JAR for VG: $CLI_JAR"
+      - cp "$CLI_JAR" "artifact/s3-cli-$COMMIT.jar"
+      - |
+        if [ -n "$ARTIFACTS_BUCKET" ]; then
+          echo "Uploading VG CLI jar to s3://$ARTIFACTS_BUCKET/builds/"
+          aws s3 cp "artifact/s3-cli-$COMMIT.jar" "s3://$ARTIFACTS_BUCKET/builds/"
+        else
+          echo "ARTIFACTS_BUCKET not set; skip VG upload"
+        fi
 
 artifacts:
+  # What CodePipeline passes to Elastic Beanstalk
   files:
-    - artifact/**/*
+    - target/webapp.jar
+    - Procfile
   discard-paths: yes

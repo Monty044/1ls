@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><title>Statistik</title></head>
+<body>
+<h1>Statistik</h1>
+<table border="1" cellpadding="6">
+    <tr><th>Namn</th><th>Land</th><th>Antal</th></tr>
+    <tr th:each="r : ${rows}">
+        <td th:text="${r.name}"></td>
+        <td th:text="${r.country}"></td>
+        <td th:text="${r.count}"></td>
+    </tr>
+</table>
+<p><a th:href="@{/}">Tillbaka</a></p>
+</body>
+</html>

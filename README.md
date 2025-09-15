@@ -11,3 +11,4 @@ java -jar target/*-with-dependencies.jar
 - CodePipeline builds and runs `mvn test` (see `buildspec.yml`).
 - Artifact is the shaded JAR in `target/`.
   "@ | Set-Content -Encoding UTF8 README.md
+ s
