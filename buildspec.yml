@@ -12,9 +12,12 @@ phases:
     commands:
       - COMMIT="${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}"
       - mkdir -p artifact
-      - cp target/*-with-dependencies*.jar artifact/s3-cli-$COMMIT.jar || true
-      - if [ ! -f artifact/s3-cli-$COMMIT.jar ]; then cp target/*.jar artifact/s3-cli-$COMMIT.jar; fi
-      - aws s3 cp artifact/s3-cli-$COMMIT.jar s3://$ARTIFACTS_BUCKET/builds/
+      # Pick one jar from target/ (ignore 'original' jars if present)
+      - JAR=$(ls -1 target/*.jar | grep -v 'original' | head -n1)
+      - echo "Using JAR: $JAR"
+      - cp "$JAR" "artifact/s3-cli-$COMMIT.jar"
+      - aws s3 cp "artifact/s3-cli-$COMMIT.jar" "s3://$ARTIFACTS_BUCKET/builds/"
+
 
 artifacts:
   files:
