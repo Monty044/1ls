@@ -1,14 +1,22 @@
 version: 0.2
+
 phases:
+  pre_build:
+    commands:
+      - echo "Commit $CODEBUILD_RESOLVED_SOURCE_VERSION"
+      - mvn -B -q -DskipTests=false test
   build:
     commands:
-      - mvn -DskipTests package
-post_build:
-  commands:
-    - 'if [ -z "$ARTIFACTS_BUCKET" ]; then echo "Set ARTIFACTS_BUCKET env var in CodeBuild"; exit 1; fi'
-    - COMMIT=${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual}
-    - aws s3 cp target/s3-cli-vg-1.0.0.jar s3://$ARTIFACTS_BUCKET/builds/s3-cli-vg-${COMMIT}.jar
+      - mvn -B -q -DskipTests=false package
+  post_build:
+    commands:
+      - COMMIT="${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}"
+      - mkdir -p artifact
+      - cp target/*-with-dependencies*.jar artifact/s3-cli-$COMMIT.jar || true
+      - if [ ! -f artifact/s3-cli-$COMMIT.jar ]; then cp target/*.jar artifact/s3-cli-$COMMIT.jar; fi
+      - aws s3 cp artifact/s3-cli-$COMMIT.jar s3://$ARTIFACTS_BUCKET/builds/
+
 artifacts:
   files:
-    - target/s3-cli-vg-1.0.0.jar
+    - artifact/**/*
   discard-paths: yes
