@@ -115,8 +115,9 @@
     </plugins>
   </build>
 
-  <!-- Web profile (for Elastic Beanstalk build) -->
+  <!-- Profiles -->
   <profiles>
+    <!-- Web profile (for Elastic Beanstalk build) -->
     <profile>
       <id>web</id>
       <properties>
@@ -152,9 +153,8 @@
         </dependency>
       </dependencies>
       <build>
-        <!-- ADDED: stable jar name for the web app -->
+        <!-- stable jar name for the web app -->
         <finalName>app</finalName>
-
         <plugins>
           <plugin>
             <groupId>org.springframework.boot</groupId>
@@ -164,11 +164,30 @@
               <execution>
                 <goals><goal>repackage</goal></goals>
                 <configuration>
-                  <!-- FIXED: correct Boot main class -->
+                  <!-- Boot main class -->
                   <mainClass>se.monty.webapp.Application</mainClass>
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- NEW: CLI profile to exclude web sources when building the CLI -->
+    <profile>
+      <id>cli</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <!-- Don't compile the Spring Boot web code when building the CLI -->
+                <exclude>**/se/monty/webapp/**</exclude>
+              </excludes>
+            </configuration>
           </plugin>
         </plugins>
       </build>

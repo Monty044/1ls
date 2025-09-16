@@ -19,7 +19,7 @@ phases:
       - 'mvn -P web -B -q package'
       - 'cp target/app.jar artifact/app.jar'     # <— your two lines here
       - 'echo "Building CLI JAR (VG)"'
-      - 'mvn -B -q -DskipTests=false package'
+      - 'mvn -P cli -B -q -DskipTests=false package'
 
   post_build:
     commands:
