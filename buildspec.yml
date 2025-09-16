@@ -15,10 +15,9 @@ phases:
   build:
     commands:
       - 'mkdir -p artifact'
-      - 'echo "Building WEB JAR (profile=web)"'
+      - 'echo "Building WEB JAR (profile=web) -> target/app.jar"'
       - 'mvn -P web -B -q package'
-      - 'BOOT_JAR=$(ls -1 target/*.jar | grep -v original | head -n1)'
-      - 'cp "$BOOT_JAR" artifact/app.jar'
+      - 'cp target/app.jar artifact/app.jar'     # <— your two lines here
       - 'echo "Building CLI JAR (VG)"'
       - 'mvn -B -q -DskipTests=false package'
 
