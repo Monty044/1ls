@@ -4,6 +4,8 @@ phases:
   install:
     runtime-versions:
       java: corretto17
+    commands:
+      - 'echo "Using Corretto 17"'
 
   pre_build:
     commands:
@@ -12,21 +14,24 @@ phases:
 
   build:
     commands:
+      - 'mkdir -p artifact'
       - 'echo "Building WEB JAR (profile=web)"'
       - 'mvn -P web -B -q package'
-      - 'WEB_JAR=$(ls -1 target/*.jar | head -n1)'
-      - 'cp "$WEB_JAR" target/webapp.jar'
+      - 'BOOT_JAR=$(ls -1 target/*.jar | grep -v original | head -n1)'
+      - 'cp "$BOOT_JAR" artifact/app.jar'
       - 'echo "Building CLI JAR (VG)"'
       - 'mvn -B -q -DskipTests=false package'
 
   post_build:
     commands:
-      - mkdir -p artifact
-      - BOOT_JAR=$(ls -1 target/*.jar | grep -v original | head -n1)
-      - cp "$BOOT_JAR" artifact/app.jar
-  artifacts:
-    files:
-      - Procfile
-      - artifact/app.jar
-    discard-paths: yes
+      - 'COMMIT=${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}'
+      - 'CLI_JAR=$(ls -1 target/*.jar | grep -v original | grep -v app.jar | head -n1)'
+      - 'echo "Using CLI JAR for VG: $CLI_JAR"'
+      - 'cp "$CLI_JAR" "artifact/s3-cli-$COMMIT.jar"'
+      - 'if [ -n "$ARTIFACTS_BUCKET" ]; then echo "Uploading VG CLI jar to s3://$ARTIFACTS_BUCKET/builds/"; aws s3 cp "artifact/s3-cli-$COMMIT.jar" "s3://$ARTIFACTS_BUCKET/builds/"; else echo "ARTIFACTS_BUCKET not set; skip VG upload"; fi'
 
+artifacts:
+  files:
+    - 'Procfile'
+    - 'artifact/app.jar'
+  discard-paths: yes
