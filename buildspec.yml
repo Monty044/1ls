@@ -21,15 +21,12 @@ phases:
 
   post_build:
     commands:
-      - 'COMMIT=${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}'
-      - 'mkdir -p artifact'
-      - 'CLI_JAR=$(ls -1 target/*.jar | grep -v original | grep -v webapp.jar | head -n1)'
-      - 'echo "Using CLI JAR for VG: $CLI_JAR"'
-      - 'cp "$CLI_JAR" "artifact/s3-cli-$COMMIT.jar"'
-      - 'if [ -n "$ARTIFACTS_BUCKET" ]; then echo "Uploading VG CLI jar to s3://$ARTIFACTS_BUCKET/builds/"; aws s3 cp "artifact/s3-cli-$COMMIT.jar" "s3://$ARTIFACTS_BUCKET/builds/"; else echo "ARTIFACTS_BUCKET not set; skip VG upload"; fi'
+      - mkdir -p artifact
+      - BOOT_JAR=$(ls -1 target/*.jar | grep -v original | head -n1)
+      - cp "$BOOT_JAR" artifact/app.jar
+  artifacts:
+    files:
+      - Procfile
+      - artifact/app.jar
+    discard-paths: yes
 
-artifacts:
-  files:
-    - target/webapp.jar
-    - Procfile
-  discard-paths: yes
