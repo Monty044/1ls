@@ -1,4 +1,4 @@
-package webapp;
+package se.monty.webapp;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

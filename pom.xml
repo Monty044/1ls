@@ -21,7 +21,6 @@
     <shade.skip>false</shade.skip>
   </properties>
 
-  <!-- ADDED: tell Maven where to fetch deps/plugins from (Central) -->
   <repositories>
     <repository>
       <id>central</id>
@@ -35,7 +34,6 @@
     </pluginRepository>
   </pluginRepositories>
 
-  <!-- ADDED: Spring Boot BOM (versions for Boot deps when -P web) -->
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -154,6 +152,9 @@
         </dependency>
       </dependencies>
       <build>
+        <!-- ADDED: stable jar name for the web app -->
+        <finalName>app</finalName>
+
         <plugins>
           <plugin>
             <groupId>org.springframework.boot</groupId>
@@ -163,7 +164,7 @@
               <execution>
                 <goals><goal>repackage</goal></goals>
                 <configuration>
-                  <!-- update if your @SpringBootApplication is elsewhere -->
+                  <!-- FIXED: correct Boot main class -->
                   <mainClass>se.monty.webapp.Application</mainClass>
                 </configuration>
               </execution>

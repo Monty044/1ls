@@ -1,4 +1,4 @@
-package webapp;
+package se.monty.webapp;
 
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
