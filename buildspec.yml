@@ -5,22 +5,26 @@ phases:
     runtime-versions:
       java: corretto17
     commands:
-      - echo "Using Corretto 17"
+      - 'echo "Using Corretto 17"'
 
   pre_build:
     commands:
-      - echo "Commit $CODEBUILD_RESOLVED_SOURCE_VERSION"
-      - mvn -P web -B -q clean test
+      - 'echo "Commit $CODEBUILD_RESOLVED_SOURCE_VERSION"'
+      - 'mvn -P web -B -q clean test'
 
   build:
     commands:
-      - echo "Building WEB JAR (profile=web) -> target/app.jar"
-      - mvn -P web -B -q clean package -DskipTests
-      - if [ -f target/app.jar ]; then cp target/app.jar app.jar; else echo 'ERROR: target/app.jar not found'; exit 1; fi
+      - 'set -e'
+      - 'echo "Building WEB JAR (profile=web) -> target/app.jar"'
+      - 'mvn -P web -B -q clean package -DskipTests'
+      - 'test -f target/app.jar'
+      - 'cp target/app.jar app.jar'
 
-      - echo "Building CLI JAR (VG)"
-      - mvn -P cli -B -q package
-      - if [ -n "$ARTIFACTS_BUCKET" ]; then CLI_JAR=$(ls -1 target/*.jar | grep -v original | grep -v app.jar | head -n1 || true); if [ -n "$CLI_JAR" ]; then echo "Uploading VG CLI jar to s3://$ARTIFACTS_BUCKET/builds/"; aws s3 cp "$CLI_JAR" "s3://$ARTIFACTS_BUCKET/builds/s3-cli-${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}.jar"; else echo "No CLI jar found under target/; skipping upload"; fi; else echo "ARTIFACTS_BUCKET not set; skip VG upload"; fi
+      - 'echo "Building CLI JAR (VG)"'
+      - 'mvn -P cli -B -q package'
+      - '[ -n "$ARTIFACTS_BUCKET" ] || { echo "ARTIFACTS_BUCKET not set; skip VG upload"; exit 0; }'
+      - 'CLI_JAR=$(ls -1 target/*.jar | grep -v original | grep -v app.jar | head -n1 || true)'
+      - '[ -n "$CLI_JAR" ] && echo "Uploading $CLI_JAR to s3://$ARTIFACTS_BUCKET/builds/s3-cli-${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}.jar" && aws s3 cp "$CLI_JAR" "s3://$ARTIFACTS_BUCKET/builds/s3-cli-${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}.jar" || echo "No CLI jar found; skipping upload"'
 
 artifacts:
   files:
