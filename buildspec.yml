@@ -5,32 +5,36 @@ phases:
     runtime-versions:
       java: corretto17
     commands:
-      - 'echo "Using Corretto 17"'
+      - echo "Using Corretto 17"
 
   pre_build:
     commands:
-      - 'echo "Commit $CODEBUILD_RESOLVED_SOURCE_VERSION"'
-      - 'mvn -P web -B -q clean test'
+      - echo "Commit $CODEBUILD_RESOLVED_SOURCE_VERSION"
+      - mvn -P web -B -q clean test
 
   build:
     commands:
-      - 'mkdir -p artifact'
-      - 'echo "Building WEB JAR (profile=web) -> target/app.jar"'
-      - 'mvn -P web -B -q package'
-      - 'cp target/app.jar artifact/app.jar'     # <— your two lines here
-      - 'echo "Building CLI JAR (VG)"'
-      - 'mvn -P cli -B -q -DskipTests=false package'
+      - echo "Building WEB JAR (profile=web) -> target/app.jar"
+      - mvn -P web -B -q clean package -DskipTests
+      - cp target/app.jar app.jar
+
+      - echo "Building CLI JAR (VG)"
+      - mvn -P cli -B -q package
+      - CLI_JAR=$(ls -1 target/*.jar | grep -v original | grep -v app.jar | head -n1)
+      - echo "Using CLI JAR for VG: $CLI_JAR"
+      - cp "$CLI_JAR" "s3-cli-${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}.jar"
 
   post_build:
     commands:
-      - 'COMMIT=${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}'
-      - 'CLI_JAR=$(ls -1 target/*.jar | grep -v original | grep -v app.jar | head -n1)'
-      - 'echo "Using CLI JAR for VG: $CLI_JAR"'
-      - 'cp "$CLI_JAR" "artifact/s3-cli-$COMMIT.jar"'
-      - 'if [ -n "$ARTIFACTS_BUCKET" ]; then echo "Uploading VG CLI jar to s3://$ARTIFACTS_BUCKET/builds/"; aws s3 cp "artifact/s3-cli-$COMMIT.jar" "s3://$ARTIFACTS_BUCKET/builds/"; else echo "ARTIFACTS_BUCKET not set; skip VG upload"; fi'
+      - if [ -n "$ARTIFACTS_BUCKET" ]; then \
+        echo "Uploading VG CLI jar to s3://$ARTIFACTS_BUCKET/builds/"; \
+        aws s3 cp "s3-cli-${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}.jar" "s3://$ARTIFACTS_BUCKET/builds/"; \
+        else \
+        echo "ARTIFACTS_BUCKET not set; skip VG upload"; \
+        fi
 
 artifacts:
   files:
-    - 'Procfile'
-    - 'artifact/app.jar'
+    - Procfile
+    - app.jar
   discard-paths: yes
