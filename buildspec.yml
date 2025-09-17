@@ -16,16 +16,19 @@ phases:
     commands:
       - echo "Building WEB JAR (profile=web) -> target/app.jar"
       - mvn -P web -B -q clean package -DskipTests
-      - cp Procfile .
-      - cp target/app.jar app.jar
+      - test -f target/app.jar && cp target/app.jar app.jar || { echo "ERROR: target/app.jar not found"; exit 1; }
 
       - echo "Building CLI JAR (VG)"
       - mvn -P cli -B -q package
       - |
         if [ -n "$ARTIFACTS_BUCKET" ]; then
           CLI_JAR=$(ls -1 target/*.jar | grep -v original | grep -v app.jar | head -n1 || true)
-          echo "Uploading VG CLI jar to s3://$ARTIFACTS_BUCKET/builds/"
-          aws s3 cp "$CLI_JAR" "s3://$ARTIFACTS_BUCKET/builds/s3-cli-${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}.jar"
+          if [ -n "$CLI_JAR" ]; then
+            echo "Uploading VG CLI jar to s3://$ARTIFACTS_BUCKET/builds/"
+            aws s3 cp "$CLI_JAR" "s3://$ARTIFACTS_BUCKET/builds/s3-cli-${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}.jar"
+          else
+            echo "No CLI jar found under target/; skipping upload"
+          fi
         else
           echo "ARTIFACTS_BUCKET not set; skip VG upload"
         fi
