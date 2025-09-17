@@ -16,21 +16,18 @@ phases:
     commands:
       - echo "Building WEB JAR (profile=web) -> target/app.jar"
       - mvn -P web -B -q clean package -DskipTests
+      - cp Procfile .
       - cp target/app.jar app.jar
 
       - echo "Building CLI JAR (VG)"
       - mvn -P cli -B -q package
-      - CLI_JAR=$(ls -1 target/*.jar | grep -v original | grep -v app.jar | head -n1)
-      - echo "Using CLI JAR for VG: $CLI_JAR"
-      - cp "$CLI_JAR" "s3-cli-${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}.jar"
-
-  post_build:
-    commands:
-      - if [ -n "$ARTIFACTS_BUCKET" ]; then \
-        echo "Uploading VG CLI jar to s3://$ARTIFACTS_BUCKET/builds/"; \
-        aws s3 cp "s3-cli-${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}.jar" "s3://$ARTIFACTS_BUCKET/builds/"; \
-        else \
-        echo "ARTIFACTS_BUCKET not set; skip VG upload"; \
+      - |
+        if [ -n "$ARTIFACTS_BUCKET" ]; then
+          CLI_JAR=$(ls -1 target/*.jar | grep -v original | grep -v app.jar | head -n1 || true)
+          echo "Uploading VG CLI jar to s3://$ARTIFACTS_BUCKET/builds/"
+          aws s3 cp "$CLI_JAR" "s3://$ARTIFACTS_BUCKET/builds/s3-cli-${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}.jar"
+        else
+          echo "ARTIFACTS_BUCKET not set; skip VG upload"
         fi
 
 artifacts:
